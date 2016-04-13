@@ -8,6 +8,16 @@ defmodule Mailman.Render do
       :mimemail.encode
   end
 
+  def to_tuple({:alternative, parts}, email) when is_list(parts) do
+    {
+      "multipart",
+      "alternative",
+      [],
+      [],
+      Enum.map(parts, &to_tuple(&1, email))
+    }
+  end
+  
   def to_tuple(part, _email) when is_tuple(part) do
     {
       mime_type_for(part),
@@ -71,11 +81,12 @@ defmodule Mailman.Render do
   end
 
   def mime_subtype_for(parts) when is_list(parts) do
-    if Enum.find parts, fn(part) -> elem(part, 0) == :attachment end do
-      "mixed"
-    else
-      "alternative"
-    end
+    #if Enum.find parts, fn(part) -> elem(part, 0) == :attachment end do
+    #  "mixed"
+    #else
+    #  "alternative"
+    #end
+    "mixed"
   end
 
   def mime_subtype_for({type, _}) do
@@ -127,8 +138,10 @@ defmodule Mailman.Render do
 
   def compile_parts(email, composer) do
     [
-      { :plain, compile_part(:text, email, composer) },
-      { :html,  compile_part(:html, email, composer) },
+      { :alternative, [
+          { :plain, compile_part(:text, email, composer) },
+          { :html,  compile_part(:html, email, composer) }
+        ]},
       Enum.map(email.attachments, fn(attachment) ->
         { :attachment, compile_part(:attachment, attachment, composer), attachment }
       end)
