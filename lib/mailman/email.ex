@@ -8,7 +8,7 @@ defmodule Mailman.Email do
     cc: [],
     bcc: [],
     attachments: [],
-    related: [],
+    related_attachments: [],
     data: %{},
     html: "",
     text: "",
