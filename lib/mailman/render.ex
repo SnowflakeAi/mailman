@@ -2,12 +2,42 @@ defmodule Mailman.Render do
   @moduledoc "Functions for rendering email messages into strings"
 
   @doc "Returns a tuple with all data needed for the underlying adapter to send"
-  def render(email, composer) do
-    compile_parts(email, composer) |>
-      to_tuple(email) |>
-      :mimemail.encode
+  def render(email) do
+    compile_parts(email)
+    |> to_tuple(email)
+    |> :mimemail.encode
   end
 
+  def to_tuple({:mixed, parts}, email) when is_list(parts) do
+    {
+      "multipart",
+      "mixed",
+      headers_for(email),
+      [],
+      Enum.map(parts, &to_tuple(&1, email))
+    }
+  end
+  
+  def to_tuple({:alternative, parts}, email) when is_list(parts) do
+    {
+      "multipart",
+      "alternative",
+      [],
+      [],
+      Enum.map(parts, &to_tuple(&1, email))
+    }
+  end
+  
+  def to_tuple({:related, parts}, email) when is_list(parts) do
+    {
+      "multipart",
+      "related",
+      [],
+      [],
+      Enum.map(parts, &to_tuple(&1, email))
+    }
+  end
+  
   def to_tuple(part, _email) when is_tuple(part) do
     {
       mime_type_for(part),
@@ -18,11 +48,16 @@ defmodule Mailman.Render do
     }
   end
 
+  def to_tuple([], email) do
+    {}
+  end
+
   def to_tuple(parts, email) when is_list(parts) do
+    IO.puts "LIST"
     {
       mime_type_for(parts),
       mime_subtype_for(parts),
-      headers_for(email),
+      [],
       [],
       Enum.map(parts, &to_tuple(&1, email))
     }
@@ -32,8 +67,18 @@ defmodule Mailman.Render do
     [
       { "transfer-encoding", "base64" },
       content_type_params_for(attachment),
-      disposition_for(attachment),
-      disposition_params_for(attachment)
+      disposition_for(:attachment, attachment),
+      disposition_params_for(:attachment, attachment)
+    ]
+  end
+
+  def parameters_for({:related_attachment, _body, attachment}) do
+    [
+      content_id_for(attachment),
+      { "transfer-encoding", "base64" },
+      content_type_params_for(attachment),
+      disposition_for(:related_attachment, attachment),
+      disposition_params_for(:related_attachment, attachment)
     ]
   end
 
@@ -46,15 +91,23 @@ defmodule Mailman.Render do
     ]
   end
 
+  def content_id_for(attachment) do
+    { "content-id", "<" <> attachment.file_name <> ">" }
+  end
+  
   def content_type_params_for(_attachment) do
     { "content-type-params", [] }
   end
 
-  def disposition_for(_attachment) do
+  def disposition_for(:related_attachment, attachment) do
+    { "disposition", "inline" }
+  end
+
+  def disposition_for(_, _attachment) do
     { "disposition", "attachment" }
   end
 
-  def disposition_params_for(attachment) do
+  def disposition_params_for(_, attachment) do
     { "disposition-params", [{ "filename", attachment.file_name }] }
   end
 
@@ -71,11 +124,11 @@ defmodule Mailman.Render do
   end
 
   def mime_subtype_for(parts) when is_list(parts) do
-    if Enum.find parts, fn(part) -> elem(part, 0) == :attachment end do
+    #if Enum.find parts, fn(part) -> elem(part, 0) == :attachment end do
       "mixed"
-    else
-      "alternative"
-    end
+    #else
+    #  "alternative"
+    #end
   end
 
   def mime_subtype_for({type, _}) do
@@ -125,25 +178,43 @@ defmodule Mailman.Render do
     end)
   end
 
-  def compile_parts(email, composer) do
-    [
-      { :plain, compile_part(:text, email, composer) },
-      { :html,  compile_part(:html, email, composer) },
-      Enum.map(email.attachments, fn(attachment) ->
-        { :attachment, compile_part(:attachment, attachment, composer), attachment }
-      end)
-    ] |> List.flatten |>
-         Enum.filter(&not_empty_tuple_value(&1))
-  end
+  def compile_parts(email) do
+    attachments = Enum.map(email.attachments, fn(attachment) ->
+      { :attachment, attachment.data, attachment }
+    end)
+    related_attachments = Enum.map(email.related_attachments, fn(attachment) ->
+      { :related_attachment, attachment.data, attachment }
+    end)
 
-  def compile_part(type, email, composer) do
-    Mailman.Composer.compile_part(composer, type, email)
+    { :mixed, [
+        { :related, [
+            { :alternative, [
+                { :plain, email.text },
+                { :html,  email.html }
+              ]},
+          ] ++ related_attachments
+        }
+      ] ++ attachments
+    }
   end
 
   @doc "Returns boolean saying if a value for a tuple is blank as a string or list"
   def not_empty_tuple_value(tuple) when is_tuple(tuple) do
     value = elem(tuple, 1)
     value != nil && value != [] && value != ""
+  end
+
+  def not_empty_tuple_value([]) do
+    false
+  end
+
+  def not_empty_tuple_value(tuple) when is_list(tuple) do
+    true
+  end
+
+  def not_empty_tuple_value(t) do
+    IO.inspect t
+    false
   end
 
 end
