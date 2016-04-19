@@ -53,7 +53,7 @@ defmodule Mailman.Render do
   end
 
   def to_tuple(parts, email) when is_list(parts) do
-    IO.puts "LIST"
+    # I think this is not used, need to verify
     {
       mime_type_for(parts),
       mime_subtype_for(parts),
@@ -192,25 +192,6 @@ defmodule Mailman.Render do
         }
       ] ++ attachments
     }
-  end
-
-  @doc "Returns boolean saying if a value for a tuple is blank as a string or list"
-  def not_empty_tuple_value(tuple) when is_tuple(tuple) do
-    value = elem(tuple, 1)
-    value != nil && value != [] && value != ""
-  end
-
-  def not_empty_tuple_value([]) do
-    false
-  end
-
-  def not_empty_tuple_value(tuple) when is_list(tuple) do
-    true
-  end
-
-  def not_empty_tuple_value(t) do
-    IO.inspect t
-    false
   end
 
 end
