@@ -2,8 +2,8 @@ defmodule Mailman.Render do
   @moduledoc "Functions for rendering email messages into strings"
 
   @doc "Returns a tuple with all data needed for the underlying adapter to send"
-  def render(email, composer) do
-    compile_parts(email, composer) |>
+  def render(email, _) do
+    compile_parts(email) |>
       to_tuple(email) |>
       :mimemail.encode
   end
@@ -136,21 +136,17 @@ defmodule Mailman.Render do
     end)
   end
 
-  def compile_parts(email, composer) do
+  def compile_parts(email) do
     [
       { :alternative, [
-          { :plain, compile_part(:text, email, composer) },
-          { :html,  compile_part(:html, email, composer) }
+          { :plain, email.text },
+          { :html,  email.html }
         ]},
       Enum.map(email.attachments, fn(attachment) ->
-        { :attachment, compile_part(:attachment, attachment, composer), attachment }
+        { :attachment, attachment.attachment, attachment }
       end)
     ] |> List.flatten |>
          Enum.filter(&not_empty_tuple_value(&1))
-  end
-
-  def compile_part(type, email, composer) do
-    Mailman.Composer.compile_part(composer, type, email)
   end
 
   @doc "Returns boolean saying if a value for a tuple is blank as a string or list"

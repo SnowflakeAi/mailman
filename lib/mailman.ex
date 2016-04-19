@@ -12,7 +12,7 @@ defmodule Mailman do
 
   @doc "Delivers given email and returns a Task"
   def deliver(email, context) do
-    message = Mailman.Render.render(email, context.composer)
+    message = Mailman.Render.render(email)
     Adapter.deliver(Mailman.Context.get_config(context), email, message)
   end
 
@@ -20,7 +20,7 @@ defmodule Mailman do
   def deliver(email, context, :send_cc_and_bcc) do
     bcc_list = email.bcc
     cleaned_email = %Mailman.Email{email | bcc: []}
-    message = Mailman.Render.render(cleaned_email, context.composer)
+    message = Mailman.Render.render(cleaned_email)
 
     to_task = [Adapter.deliver(context.config, email, message)]
 
@@ -32,7 +32,7 @@ defmodule Mailman do
     bcc_tasks = bcc_list |> Enum.map(fn(address) ->  
       bcc_envelope = %Mailman.Email{email | to: [address]}
       bcc_message = %Mailman.Email{email | bcc: [address]}
-      message = Mailman.Render.render(bcc_message, context.composer)
+      message = Mailman.Render.render(bcc_message)
       Adapter.deliver(context.config, bcc_envelope, message)
     end)
 
