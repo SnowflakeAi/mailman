@@ -4,7 +4,7 @@
   "earmark": {:hex, :earmark, "0.1.13"},
   "eiconv": {:git, "https://github.com/zotonic/eiconv.git", "644fb5e7bd6640fbd073f4d28957914ea979aea0", []},
   "ex_doc": {:hex, :ex_doc, "0.7.1"},
-  "gen_smtp": {:hex, :gen_smtp, "0.9.0"},
+  "gen_smtp": {:git, "https://github.com/document-farm/gen_smtp.git", "ba2e557268ca8597bb738f16e8cdb1841df49408", []},
   "hackney": {:hex, :hackney, "1.5.7"},
   "httpoison": {:hex, :httpoison, "0.8.2"},
   "httpotion": {:hex, :httpotion, "2.2.2"},
