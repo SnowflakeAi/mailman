@@ -22,7 +22,7 @@ defmodule Mailman.ExternalSmtpAdapter do
       case ret do
         { :error, _, _ } -> ret
         { :error, _ } -> ret
-        _ -> { :ok, message }
+        _ -> { :ok, ret }
       end
   end
 
