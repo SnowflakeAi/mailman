@@ -23,7 +23,7 @@ defmodule Mailman.Mixfile do
   defp deps do
     [
       { :eiconv, github: "zotonic/eiconv" },
-      { :gen_smtp, github: "document-farm/gen_smtp" },
+      { :gen_smtp, github: "SnowflakeAi/gen_smtp" },
       { :ex_doc, ">= 0.6.0" },
       { :earmark, "~> 0.1.17 or ~> 0.2", [optional: true, hex: :earmark]},
       { :httpotion, "~> 2.2.2"},
